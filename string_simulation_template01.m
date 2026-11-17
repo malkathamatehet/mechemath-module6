@@ -1,12 +1,12 @@
 function string_simulation_template01()
     num_masses = 2;
-    total_mass = 3;
+    total_mass = 1;
     tension_force = 1;
-    string_length = 10;
+    string_length = 5;
     damping_coeff = 0.1;
     dx = string_length/(num_masses+1);
-    amplitude_Uf = 1;
-    omega_Uf = pi;
+    amplitude_Uf = .1;
+    omega_Uf = pi/2;
 
     %list of x points (including the two endpoints)
     xlist = linspace(0,string_length,num_masses+2);
@@ -31,18 +31,58 @@ function string_simulation_template01()
     U0 = zeros(num_masses, 1);
     dUdt0 = zeros(num_masses,1);
     V0 = [U0;dUdt0];
-    tspan = [0 2];
+    tspan = [0 10];
 
     %run the integration
     [tlist,Vlist] = ode45(my_rate_func,tspan,V0);
-
-    t_length = length(tlist);
     
+    t_length = length(tlist);
+
     for i = 1:num_masses
         x_pos(:,i) = ones(t_length,1) * i*dx;
     end
     x_pos = [zeros(t_length,1), x_pos];
     x_pos = [x_pos, ones(t_length,1) * (num_masses+1)*dx];
+
+    y_pos = [zeros(t_length,1), Vlist(:,1:2)];
+    y_pos = [y_pos, Uf_func(tlist)];
+
     
+    path = 'C:\Users\fhalaska\Documents\MechEMath\mechemath-module6\plots\';
+    fname = 'vibrating_string_ani.avi';
+    input = [path, fname];
+    
+    writerObj = VideoWriter(input);
+    open(writerObj);
+
+    fig1=figure(1);
+    hold on;
+
+    set(fig1, 'units', 'pixels','position',[0,0,1440,1080]);
+    string_plot = plot(0,0,'k-', LineWidth=3);
+    mass_plot = scatter(0, 0, 200, 'r', 'filled');
+
+    axis equal; axis square;
+
+    axis([0, 5,-0.25,0.25]);
+    ax = gca;
+    ax.FontSize = 16;
+    ax.XAxis.TickLabelInterpreter = 'Latex';
+    ax.YAxis.TickLabelInterpreter = 'Latex';
+
+    xlabel("x (-)", Interpreter="latex", FontSize=16)
+    ylabel("y (-)", Interpreter="latex", FontSize=16)
+    title("Vibrating String Animation", Interpreter="latex", FontSize=18)
+
+    for i = 1:length(tlist)
+        % dist = norm([x_pos(i,3), y_pos(i,3)] - [x_pos(i,4), y_pos(i,4)])
+        set(string_plot, 'xdata', x_pos(i,:), 'ydata', y_pos(i,:))
+        set(mass_plot, 'xdata', x_pos(i,2:3), 'ydata', y_pos(i,2:3))
+        drawnow
+        pause(0.1)
+        current_frame = getframe(fig1);
+        writeVideo(writerObj, current_frame);
+    end
+    close(writerObj);
     
 end
